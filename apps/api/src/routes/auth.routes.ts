@@ -10,8 +10,8 @@ import { serializeUser } from '../utils/serializers';
 
 export const authRouter = Router();
 
-const sessionContext = (request: { ip: string; header(name: string): string | undefined }) => ({
-  ipAddress: request.ip,
+const sessionContext = (request: { ip?: string; header(name: string): string | undefined }) => ({
+  ipAddress: request.ip ?? 'unknown',
   userAgent: request.header('user-agent'),
 });
 

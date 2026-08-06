@@ -1,7 +1,6 @@
 import {
   ApplicationStatus,
   DocumentStatus,
-  DocumentType,
   FamilyStatus,
   Gender,
   HouseType,

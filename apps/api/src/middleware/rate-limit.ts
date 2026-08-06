@@ -13,7 +13,7 @@ type Counter = { count: number; resetAt: number };
  * Small in-process guard for development and a single API process. Deployments with
  * multiple instances should replace the backing store with Redis or an API gateway.
  */
-export const createRateLimit = ({ windowMs, max, key = (request) => request.ip }: RateLimitOptions): RequestHandler => {
+export const createRateLimit = ({ windowMs, max, key = (request) => request.ip ?? 'unknown' }: RateLimitOptions): RequestHandler => {
   const counters = new Map<string, Counter>();
   let lastSweep = 0;
 

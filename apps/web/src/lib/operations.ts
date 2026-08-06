@@ -1,8 +1,6 @@
 import { apiDownload, apiRequest } from './api';
 
 type UnknownRecord = Record<string, unknown>;
-type QueryValue = string | number | boolean | null | undefined;
-
 const isRecord = (value: unknown): value is UnknownRecord => typeof value === 'object' && value !== null && !Array.isArray(value);
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 

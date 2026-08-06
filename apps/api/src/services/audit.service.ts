@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
 export const writeAuditLog = async (
@@ -15,8 +16,8 @@ export const writeAuditLog = async (
         action,
         entityType,
         entityId,
-        metadata,
-        ipAddress: request.ip,
+        metadata: metadata as Prisma.InputJsonValue | undefined,
+        ipAddress: request.ip ?? 'unknown',
       },
     });
   } catch (error) {

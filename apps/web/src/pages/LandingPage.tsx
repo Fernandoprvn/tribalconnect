@@ -1,6 +1,6 @@
 import {
   ArrowForward, CheckCircleOutline, Diversity3Outlined, EmojiEventsOutlined, HealthAndSafetyOutlined,
-  HomeWorkOutlined, KeyboardArrowDown, MenuBookOutlined, PeopleAltOutlined, PhoneOutlined, SchoolOutlined,
+  HomeWorkOutlined, KeyboardArrowDown, PeopleAltOutlined, PhoneOutlined, SchoolOutlined,
   SolarPowerOutlined, VolunteerActivismOutlined,
 } from '@mui/icons-material';
 import {
