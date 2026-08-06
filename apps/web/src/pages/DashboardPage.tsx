@@ -185,7 +185,7 @@ export default function DashboardPage() {
       {dashboardQuery.isError && <Alert severity="error" sx={{ mb: 2.2 }} action={<Button color="inherit" size="small" onClick={() => void dashboardQuery.refetch()}>Retry</Button>}>The dashboard could not be loaded. Check the connection and try again.</Alert>}
       {dashboardQuery.isLoading && !dashboard && <Grid container spacing={2.2}>{Array.from({ length: 4 }, (_, index) => <Grid key={index} size={{ xs: 12, sm: 6, xl: 3 }}><Card variant="outlined"><CardContent><Skeleton width="55%" /><Skeleton variant="text" width="38%" height={56} /><Skeleton width="70%" /></CardContent></Card></Grid>)}</Grid>}
       {!dashboardQuery.isLoading && dashboard && !hasDashboardData && <Paper variant="outlined" sx={{ py: 7, px: 3, textAlign: 'center', mb: 2.3 }}><GroupsOutlined color="disabled" sx={{ fontSize: 40 }} /><Typography variant="h6" sx={{ mt: 1 }}>No dashboard data for this scope</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>Try widening the filters or register a family to begin tracking delivery.</Typography></Paper>}
-      {dashboard && hasDashboardData && <>
+      {dashboard && kpis && hasDashboardData && <>
         <Grid container spacing={2.2}>{cards.map((card) => <Grid key={card.label} size={{ xs: 12, sm: 6, xl: 3 }}><StatCard label={card.label} value={formatNumber(card.metric.value)} icon={card.icon} color={card.color} change={card.metric.change} helper={card.metric.helper} direction={card.metric.direction} /></Grid>)}</Grid>
         <Grid container spacing={2.3} sx={{ mt: .1 }}>
           <Grid size={{ xs: 12, lg: 8 }}>

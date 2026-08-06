@@ -15,7 +15,7 @@ type LoginValues = { mobile: string; role: UserRole; otp: string };
 const schema = yup.object({
   mobile: yup.string().matches(/^\d{10}$/, 'Enter a valid 10-digit mobile number').required('Mobile number is required'),
   role: yup.mixed<UserRole>().oneOf(['SUPER_ADMIN', 'DEVELOPMENT_OFFICER', 'FIELD_VOLUNTEER', 'FAMILY']).required(),
-  otp: yup.string().matches(/^$|^\d{4,8}$/, 'Enter the OTP sent to your mobile number'),
+  otp: yup.string().defined().matches(/^$|^\d{4,8}$/, 'Enter the OTP sent to your mobile number'),
 });
 
 const roleNames: Record<UserRole, string> = { SUPER_ADMIN: 'Super Admin', DEVELOPMENT_OFFICER: 'Development Officer', FIELD_VOLUNTEER: 'Field Volunteer', FAMILY: 'Tribal Family' };

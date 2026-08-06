@@ -6,7 +6,8 @@ import { store } from './store';
 import { createTribalTheme } from './theme';
 
 type ColorMode = 'light' | 'dark';
-const ColorModeContext = createContext({ mode: 'light' as ColorMode, toggle: () => undefined });
+type ColorModeContextValue = { mode: ColorMode; toggle: () => void };
+const ColorModeContext = createContext<ColorModeContextValue>({ mode: 'light', toggle: () => {} });
 export const useColorMode = () => useContext(ColorModeContext);
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 60_000 } } });
 

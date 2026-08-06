@@ -33,7 +33,7 @@ const pick = (record: UnknownRecord | undefined, keys: string[]): unknown => {
   return undefined;
 };
 
-function withQuery(path: string, values: Record<string, QueryValue>) {
+function withQuery<T extends object>(path: string, values: T) {
   const params = new URLSearchParams();
   Object.entries(values).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));

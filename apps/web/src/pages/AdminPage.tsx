@@ -21,7 +21,7 @@ function settingText(value: unknown) {
   return typeof value === 'string' ? value : JSON.stringify(value) ?? '';
 }
 
-async function settingsData() {
+async function settingsData(): Promise<SystemSetting[]> {
   const response = await apiRequest<{ data: Record<string, unknown> | SystemSetting[] }>('/admin/settings');
   if (Array.isArray(response.data)) return response.data;
   return Object.entries(response.data).map(([key, value]) => ({ key, value }));

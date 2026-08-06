@@ -113,12 +113,12 @@ export default function ApplicationsPage() {
   const meta = applicationsQuery.data?.meta;
   const officers = useMemo(() => {
     const unique = new Map<string, Officer>();
-    (officersQuery.data?.data ?? []).forEach((officer) => unique.set(officer.id, officer));
+    (officersQuery.data ?? []).forEach((officer) => unique.set(officer.id, officer));
     rows.forEach((application) => {
       if (application.family.assignedOfficer) unique.set(application.family.assignedOfficer.id, application.family.assignedOfficer);
     });
     return [...unique.values()].sort((left, right) => left.fullName.localeCompare(right.fullName));
-  }, [officersQuery.data?.data, rows]);
+  }, [officersQuery.data, rows]);
   const summary = useMemo(() => ({
     open: rows.filter((item) => !['APPROVED', 'REJECTED', 'BENEFIT_RECEIVED'].includes(item.status)).length,
     approved: rows.filter((item) => item.status === 'APPROVED' || item.status === 'BENEFIT_RECEIVED').length,
