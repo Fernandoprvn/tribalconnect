@@ -1,0 +1,574 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  DEVELOPMENT_OFFICER
+  FIELD_VOLUNTEER
+  FAMILY
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum FamilyStatus {
+  DRAFT
+  SUBMITTED
+  DOCUMENT_VERIFICATION
+  FIELD_VISIT
+  APPROVED
+  REJECTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum HouseType {
+  PUCCA
+  SEMI_PUCCA
+  KUTCHA
+  TEMPORARY
+}
+
+enum DocumentType {
+  AADHAAR
+  COMMUNITY_CERTIFICATE
+  INCOME_CERTIFICATE
+  RATION_CARD
+  BANK_PASSBOOK
+  PASSPORT_PHOTO
+  HOUSE_PHOTO
+  LAND_DOCUMENT
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum SchemeStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  RECOMMENDED
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  BENEFIT_RECEIVED
+}
+
+enum VisitStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum WorkflowStage {
+  SUBMITTED
+  DOCUMENT_VERIFICATION
+  FIELD_VISIT
+  APPROVAL
+  SCHEME_RECOMMENDATION
+  APPLICATION_SUBMITTED
+  BENEFIT_RECEIVED
+  REJECTED
+}
+
+enum NotificationChannel {
+  IN_APP
+  SMS
+  WHATSAPP
+  EMAIL
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  READ
+}
+
+enum BackupStatus {
+  CREATED
+  RESTORED
+  FAILED
+}
+
+model User {
+  id               String       @id @default(uuid())
+  fullName         String
+  mobile           String
+  email            String?
+  role             Role
+  status           UserStatus   @default(ACTIVE)
+  avatarUrl        String?
+  districtId       String?
+  district         District?    @relation("UserDistrict", fields: [districtId], references: [id], onDelete: SetNull)
+  familyId         String?      @unique
+  family           Family?      @relation("FamilyPortalUser", fields: [familyId], references: [id], onDelete: SetNull)
+  assignedFamilies Family[]     @relation("FamilyOfficer")
+  assignedVillages Village[]    @relation("VillageOfficer")
+  fieldVisits      FieldVisit[] @relation("VolunteerVisits")
+  notifications    Notification[]
+  auditLogs        AuditLog[]   @relation("AuditActor")
+  refreshTokens    RefreshToken[]
+  notificationPreference NotificationPreference?
+  preference       UserPreference?
+  verifiedDocuments FamilyDocument[] @relation("DocumentVerifier")
+  createdSchemes   Scheme[] @relation("SchemeCreator")
+  submittedApplications SchemeApplication[] @relation("ApplicationSubmitter")
+  applicationStatusEvents ApplicationStatusEvent[] @relation("ApplicationStatusActor")
+  workflowEvents   WorkflowEvent[] @relation("WorkflowActor")
+  announcements    Announcement[] @relation("AnnouncementCreator")
+  updatedSettings  SystemSetting[] @relation("SettingUpdater")
+  updatedPermissions Permission[] @relation("PermissionUpdater")
+  createdBackups   BackupRecord[] @relation("BackupCreator")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([mobile, role])
+  @@index([districtId])
+  @@index([role, status])
+}
+
+model District {
+  id        String              @id @default(uuid())
+  name      String              @unique
+  code      String              @unique
+  blocks    Block[]
+  villages  Village[]
+  families  Family[]
+  centers   DevelopmentCenter[]
+  users     User[]              @relation("UserDistrict")
+  announcements Announcement[]  @relation("DistrictAnnouncements")
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model Block {
+  id         String      @id @default(uuid())
+  name       String
+  districtId String
+  district   District    @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  panchayats Panchayat[]
+  villages   Village[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([districtId, name])
+  @@index([districtId])
+}
+
+model Panchayat {
+  id        String    @id @default(uuid())
+  name      String
+  blockId   String
+  block     Block     @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  villages  Village[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([blockId, name])
+  @@index([blockId])
+}
+
+model Village {
+  id                    String       @id @default(uuid())
+  name                  String
+  hamlet                String?
+  population            Int          @default(0)
+  tribalFamilyCount     Int          @default(0)
+  mapLatitude           Decimal?     @db.Decimal(10, 7)
+  mapLongitude          Decimal?     @db.Decimal(10, 7)
+  districtId            String
+  district              District     @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  blockId               String?
+  block                 Block?       @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  panchayatId           String?
+  panchayat             Panchayat?  @relation(fields: [panchayatId], references: [id], onDelete: SetNull)
+  assignedOfficerId     String?
+  assignedOfficer       User?        @relation("VillageOfficer", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
+  families              Family[]
+  fieldVisits           FieldVisit[]
+  developmentCenters    DevelopmentCenter[]
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@unique([districtId, name])
+  @@index([districtId])
+  @@index([assignedOfficerId])
+}
+
+model DevelopmentCenter {
+  id          String    @id @default(uuid())
+  name        String
+  code        String    @unique
+  address     String
+  phone       String?
+  email       String?
+  districtId  String
+  district    District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  villageId   String?
+  village     Village?  @relation(fields: [villageId], references: [id], onDelete: SetNull)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([districtId])
+}
+
+model Family {
+  id                    String           @id @default(uuid())
+  familyCode            String           @unique
+  headName              String
+  fatherOrHusbandName   String?
+  mobile                String
+  aadhaarHash           String           @unique
+  aadhaarMasked         String
+  tribalCommunity       String
+  casteCertificateNo    String?
+  address               String
+  panchayatName         String?
+  state                 String           @default("Tamil Nadu")
+  status                FamilyStatus     @default(DRAFT)
+  isWidow               Boolean          @default(false)
+  latitude              Decimal?         @db.Decimal(10, 7)
+  longitude             Decimal?         @db.Decimal(10, 7)
+  districtId            String
+  district              District         @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  villageId             String
+  village               Village          @relation(fields: [villageId], references: [id], onDelete: Restrict)
+  assignedOfficerId     String?
+  assignedOfficer       User?            @relation("FamilyOfficer", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
+  submittedAt           DateTime?
+  approvedAt            DateTime?
+  rejectionReason       String?
+  portalUser            User?            @relation("FamilyPortalUser")
+  members               FamilyMember[]
+  income                FamilyIncome?
+  documents             FamilyDocument[]
+  applications          SchemeApplication[]
+  fieldVisits           FieldVisit[]
+  workflowEvents        WorkflowEvent[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([districtId, villageId])
+  @@index([mobile])
+  @@index([status])
+  @@index([assignedOfficerId])
+}
+
+model FamilyMember {
+  id             String   @id @default(uuid())
+  familyId       String
+  family         Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  name           String
+  gender         Gender
+  dateOfBirth    DateTime?
+  age            Int?
+  relationship   String
+  occupation     String?
+  education      String?
+  hasDisability  Boolean  @default(false)
+  disabilityType String?
+  aadhaarHash    String?
+  aadhaarMasked  String?
+  isStudent      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([familyId])
+}
+
+model FamilyIncome {
+  id                  String    @id @default(uuid())
+  familyId            String    @unique
+  family              Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  annualIncome        Decimal   @db.Decimal(12, 2)
+  primaryOccupation   String?
+  landOwnershipAcres  Decimal?  @db.Decimal(10, 2)
+  houseType           HouseType?
+  livestockCount      Int       @default(0)
+  hasBankAccount      Boolean   @default(false)
+  bankAccountLast4    String?
+  ifscCode            String?
+  rationCardNumber    String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model FamilyDocument {
+  id          String         @id @default(uuid())
+  familyId    String
+  family      Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  type        DocumentType
+  fileName    String
+  storageKey  String
+  mimeType    String
+  sizeBytes   Int
+  status      DocumentStatus @default(PENDING)
+  rejectionNote String?
+  verifiedById  String?
+  verifiedBy    User?          @relation("DocumentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([familyId, type])
+  @@index([status])
+}
+
+model Scheme {
+  id                  String              @id @default(uuid())
+  code                String              @unique
+  name                String
+  department          String
+  description         String
+  benefits            String[]
+  eligibilitySummary  String?
+  criteria            Json                @default("{}")
+  requiredDocuments   String[]
+  lastDate            DateTime?
+  status              SchemeStatus        @default(DRAFT)
+  applicationLink     String?
+  createdById         String?
+  createdBy           User?                @relation("SchemeCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  applications        SchemeApplication[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([status])
+  @@index([department])
+}
+
+model SchemeApplication {
+  id                  String              @id @default(uuid())
+  applicationNumber   String              @unique
+  familyId            String
+  family              Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  schemeId            String
+  scheme              Scheme              @relation(fields: [schemeId], references: [id], onDelete: Restrict)
+  status              ApplicationStatus   @default(RECOMMENDED)
+  eligibilitySnapshot Json
+  notes               String?
+  submittedById       String?
+  submittedBy         User?                @relation("ApplicationSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  submittedAt         DateTime?
+  decidedAt           DateTime?
+  rejectionReason     String?
+  benefitReceivedAt   DateTime?
+  workflowEvents      WorkflowEvent[]
+  statusEvents        ApplicationStatusEvent[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@unique([familyId, schemeId])
+  @@index([schemeId, status])
+  @@index([familyId, status])
+}
+
+model ApplicationStatusEvent {
+  id              String            @id @default(uuid())
+  applicationId   String
+  application     SchemeApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status          ApplicationStatus
+  note            String?
+  actorId         String?
+  actor           User?             @relation("ApplicationStatusActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+
+  @@index([applicationId, createdAt])
+}
+
+model FieldVisit {
+  id              String       @id @default(uuid())
+  familyId        String
+  family          Family       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  villageId       String?
+  village         Village?     @relation(fields: [villageId], references: [id], onDelete: SetNull)
+  volunteerId     String?
+  volunteer       User?        @relation("VolunteerVisits", fields: [volunteerId], references: [id], onDelete: SetNull)
+  scheduledAt     DateTime
+  completedAt     DateTime?
+  status          VisitStatus  @default(SCHEDULED)
+  purpose         String
+  notes           String?
+  latitude        Decimal?     @db.Decimal(10, 7)
+  longitude       Decimal?     @db.Decimal(10, 7)
+  photoStorageKey String?
+  clientSyncId    String?      @unique
+  syncReceivedAt  DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([familyId, scheduledAt])
+  @@index([volunteerId, status])
+}
+
+model WorkflowEvent {
+  id              String              @id @default(uuid())
+  familyId        String
+  family          Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  applicationId   String?
+  application     SchemeApplication?  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stage           WorkflowStage
+  title           String
+  note            String?
+  actorId         String?
+  actor           User?               @relation("WorkflowActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorName       String?
+  createdAt       DateTime            @default(now())
+
+  @@index([familyId, createdAt])
+  @@index([applicationId, createdAt])
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  channel   NotificationChannel @default(IN_APP)
+  status    NotificationStatus @default(QUEUED)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  @@index([userId, status, createdAt])
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  districtId  String?
+  district    District? @relation("DistrictAnnouncements", fields: [districtId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdBy   User?     @relation("AnnouncementCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished, publishedAt])
+}
+
+model OtpChallenge {
+  id          String    @id @default(uuid())
+  mobile      String
+  role        Role?
+  codeHash    String
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([mobile, role, createdAt])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  actorId     String?
+  actor       User?     @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  replacedById String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+model NotificationPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sms       Boolean  @default(true)
+  whatsapp  Boolean  @default(false)
+  email     Boolean  @default(true)
+  inApp     Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value     Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  description String
+  roles       Role[]
+  updatedById String?
+  updatedBy   User?    @relation("PermissionUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json
+  updatedById String?
+  updatedBy   User?    @relation("SettingUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BackupRecord {
+  id          String       @id @default(uuid())
+  label       String
+  status      BackupStatus @default(CREATED)
+  snapshot    Json?
+  summary     Json?
+  createdById String?
+  createdBy   User?        @relation("BackupCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  restoredAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([createdAt])
+}

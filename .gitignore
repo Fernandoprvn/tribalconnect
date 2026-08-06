@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.env
+apps/api/.env
+apps/api/uploads/
+*.tsbuildinfo
+npm-debug.log*
+.env.*

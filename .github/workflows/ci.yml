@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://tribalconnect:tribalconnect@localhost:5432/tribalconnect?schema=public
+      JWT_SECRET: ci-only-secret-change-before-production
+      AADHAAR_HASH_SALT: ci-only-aadhaar-salt
+      CORS_ORIGIN: http://localhost:5173
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: tribalconnect
+          POSTGRES_USER: tribalconnect
+          POSTGRES_PASSWORD: tribalconnect
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tribalconnect -d tribalconnect"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm install
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Prepare the test database
+        run: |
+          if [ -d apps/api/prisma/migrations ] && find apps/api/prisma/migrations -mindepth 1 -maxdepth 1 -type d | grep -q .; then
+            npm run db:deploy --workspace @tribalconnect/api
+          else
+            npm run db:push --workspace @tribalconnect/api
+          fi
+      - name: Start API and verify health
+        run: |
+          npm run start --workspace @tribalconnect/api > api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4000/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat api.log
+          exit 1

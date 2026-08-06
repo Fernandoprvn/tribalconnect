@@ -1,0 +1,19 @@
+{
+  "name": "TribalConnect – Rural Development & Tribal Welfare",
+  "short_name": "TribalConnect",
+  "description": "Mobile-first access to rural development and tribal welfare services.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0b6e4f",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

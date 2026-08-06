@@ -1,0 +1,27 @@
+{
+  "name": "tribalconnect",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Rural Development & Tribal Welfare Portal",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @tribalconnect/web",
+    "dev:web": "npm run dev --workspace @tribalconnect/web",
+    "dev:api": "npm run dev --workspace @tribalconnect/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run lint && npm run typecheck && npm run build",
+    "seed": "npm run seed --workspace @tribalconnect/api"
+  },
+  "devDependencies": {
+    "eslint": "^9.21.0",
+    "typescript-eslint": "^8.24.0"
+  },
+  "engines": {
+    "node": ">=20.12.0"
+  }
+}
