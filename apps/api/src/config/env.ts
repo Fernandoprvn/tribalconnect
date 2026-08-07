@@ -10,13 +10,6 @@ const environmentSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('8h'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   AADHAAR_HASH_SALT: z.string().min(8).default('development-aadhaar-salt'),
-  OTP_DEVELOPMENT_CODE: z.string().regex(/^\d{4,8}$/).default('123456'),
-  OTP_EXPIRY_MINUTES: z.coerce.number().int().min(1).max(60).default(10),
-  OTP_PROVIDER: z.enum(['console', 'webhook']).default('console'),
-  OTP_WEBHOOK_URL: z.preprocess(
-    (value) => value === '' ? undefined : value,
-    z.string().url().optional(),
-  ),
   UPLOAD_DIR: z.string().default('uploads'),
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(5_242_880),
   API_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).default(15 * 60_000),
@@ -36,10 +29,6 @@ export const env = environmentSchema.parse({
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
   REFRESH_TOKEN_TTL_DAYS: process.env.REFRESH_TOKEN_TTL_DAYS,
   AADHAAR_HASH_SALT: process.env.AADHAAR_HASH_SALT,
-  OTP_DEVELOPMENT_CODE: process.env.OTP_DEVELOPMENT_CODE,
-  OTP_EXPIRY_MINUTES: process.env.OTP_EXPIRY_MINUTES,
-  OTP_PROVIDER: process.env.OTP_PROVIDER,
-  OTP_WEBHOOK_URL: process.env.OTP_WEBHOOK_URL,
   UPLOAD_DIR: process.env.UPLOAD_DIR,
   MAX_UPLOAD_BYTES: process.env.MAX_UPLOAD_BYTES,
   API_RATE_LIMIT_WINDOW_MS: process.env.API_RATE_LIMIT_WINDOW_MS,
@@ -52,7 +41,4 @@ if (env.NODE_ENV === 'production' && env.JWT_SECRET === 'development-only-change
 }
 if (env.NODE_ENV === 'production' && env.AADHAAR_HASH_SALT === 'development-aadhaar-salt') {
   throw new Error('AADHAAR_HASH_SALT must be explicitly configured in production.');
-}
-if (env.NODE_ENV === 'production' && (env.OTP_PROVIDER !== 'webhook' || !env.OTP_WEBHOOK_URL)) {
-  throw new Error('Production requires OTP_PROVIDER=webhook and a valid OTP_WEBHOOK_URL.');
 }

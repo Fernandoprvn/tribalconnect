@@ -12,6 +12,7 @@ import {
   WorkflowStage,
 } from '@prisma/client';
 import { hashAadhaar } from '../src/utils/identifiers';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -154,21 +155,10 @@ async function main() {
     create: { blockId: pennagaram.id, name: 'Hogenakkal' },
   });
 
-  const admin = await prisma.user.upsert({
-    where: { mobile_role: { mobile: '9876543210', role: Role.SUPER_ADMIN } },
-    update: { fullName: 'Meera Krishnan' },
-    create: { fullName: 'Meera Krishnan', mobile: '9876543210', role: Role.SUPER_ADMIN, districtId: nilgiris.id },
-  });
-  const officer = await prisma.user.upsert({
-    where: { mobile_role: { mobile: '9876543210', role: Role.DEVELOPMENT_OFFICER } },
-    update: { fullName: 'Arun Kumar' },
-    create: { fullName: 'Arun Kumar', mobile: '9876543210', role: Role.DEVELOPMENT_OFFICER, districtId: nilgiris.id },
-  });
-  const volunteer = await prisma.user.upsert({
-    where: { mobile_role: { mobile: '9876543210', role: Role.FIELD_VOLUNTEER } },
-    update: { fullName: 'Kavitha M' },
-    create: { fullName: 'Kavitha M', mobile: '9876543210', role: Role.FIELD_VOLUNTEER, districtId: nilgiris.id },
-  });
+  const passwordHashes = await Promise.all(['Admin@123', 'Officer@123', 'Volunteer@123', 'Family@123'].map((password) => bcrypt.hash(password, 12)));
+  const admin = await prisma.user.upsert({ where: { username: 'admin' }, update: { fullName: 'Meera Krishnan', passwordHash: passwordHashes[0] }, create: { fullName: 'Meera Krishnan', username: 'admin', email: 'admin@tribalconnect.gov.in', passwordHash: passwordHashes[0], mobile: '9876543210', role: Role.SUPER_ADMIN, districtId: nilgiris.id } });
+  const officer = await prisma.user.upsert({ where: { username: 'officer1' }, update: { fullName: 'Arun Kumar', passwordHash: passwordHashes[1] }, create: { fullName: 'Arun Kumar', username: 'officer1', email: 'officer1@tribalconnect.gov.in', passwordHash: passwordHashes[1], mobile: '9876543211', role: Role.DEVELOPMENT_OFFICER, districtId: nilgiris.id } });
+  const volunteer = await prisma.user.upsert({ where: { username: 'volunteer1' }, update: { fullName: 'Kavitha M', passwordHash: passwordHashes[2] }, create: { fullName: 'Kavitha M', username: 'volunteer1', email: 'volunteer1@tribalconnect.gov.in', passwordHash: passwordHashes[2], mobile: '9876543212', role: Role.FIELD_VOLUNTEER, districtId: nilgiris.id } });
 
   const permissions = [
     { key: 'families.manage', description: 'Create, update, and submit family records.', roles: [Role.SUPER_ADMIN, Role.DEVELOPMENT_OFFICER, Role.FIELD_VOLUNTEER] },
@@ -317,11 +307,12 @@ async function main() {
     ],
   });
 
-  await prisma.user.upsert({
-    where: { mobile_role: { mobile: '9876543210', role: Role.FAMILY } },
-    update: { fullName: familyOne.headName, familyId: familyOne.id },
-    create: { fullName: familyOne.headName, mobile: '9876543210', role: Role.FAMILY, familyId: familyOne.id },
-  });
+  const existingFamilyPortalUser = await prisma.user.findUnique({ where: { familyId: familyOne.id }, select: { id: true } });
+  if (existingFamilyPortalUser) {
+    await prisma.user.update({ where: { id: existingFamilyPortalUser.id }, data: { fullName: familyOne.headName, username: 'family1', email: 'family1@tribalconnect.gov.in', passwordHash: passwordHashes[3], mobile: '9876543213', role: Role.FAMILY } });
+  } else {
+    await prisma.user.upsert({ where: { username: 'family1' }, update: { fullName: familyOne.headName, familyId: familyOne.id, passwordHash: passwordHashes[3] }, create: { fullName: familyOne.headName, username: 'family1', email: 'family1@tribalconnect.gov.in', passwordHash: passwordHashes[3], mobile: '9876543213', role: Role.FAMILY, familyId: familyOne.id } });
+  }
 
   const schemes = [
     {

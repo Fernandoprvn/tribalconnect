@@ -15,10 +15,11 @@ import { z } from 'zod';
 const mobile = z.string().trim().refine((value) => value.replace(/\D/g, '').length === 10, 'Enter a valid 10-digit mobile number.');
 const aadhaar = z.string().trim().refine((value) => value.replace(/\D/g, '').length === 12, 'Enter a valid 12-digit Aadhaar number.');
 
-export const otpRequestSchema = z.object({ mobile, role: z.nativeEnum(Role) });
-export const otpVerifySchema = z.object({ mobile, role: z.nativeEnum(Role), code: z.string().regex(/^\d{4,8}$/) });
-export const refreshTokenSchema = z.object({ refreshToken: z.string().trim().min(32).max(1_000) });
-export const logoutSchema = z.object({ refreshToken: z.string().trim().min(32).max(1_000).optional() });
+export const loginSchema = z.object({
+  identifier: z.string().trim().min(3).max(254),
+  password: z.string().min(8).max(128),
+  rememberMe: z.boolean().optional().default(false),
+});
 
 export const familyMemberSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -225,8 +226,10 @@ export const announcementUpdateSchema = announcementBaseSchema.partial().superRe
 
 export const adminUserSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
-  mobile,
+  username: z.string().trim().toLowerCase().regex(/^[a-z0-9._-]{3,64}$/),
   email: z.string().trim().email().max(254).nullable().optional(),
+  password: z.string().min(8).max(128),
+  mobile: mobile.optional().nullable(),
   role: z.nativeEnum(Role),
   status: z.nativeEnum(UserStatus).default(UserStatus.ACTIVE),
   districtId: z.string().uuid().nullable().optional(),
@@ -234,7 +237,7 @@ export const adminUserSchema = z.object({
   avatarUrl: z.string().url().max(2_000).nullable().optional(),
 });
 
-export const adminUserUpdateSchema = adminUserSchema.partial();
+export const adminUserUpdateSchema = adminUserSchema.partial().extend({ password: z.string().min(8).max(128).optional() });
 export const permissionUpdateSchema = z.object({
   roles: z.array(z.nativeEnum(Role)).min(1).max(4),
   description: z.string().trim().min(3).max(300).optional(),

@@ -75,7 +75,7 @@ function RequireRole({ roles }: { roles: UserRole[] }) {
 function PublicOnly() {
   const session = useSelector((state: RootState) => state.session);
   if (!session.authenticated) return <Outlet />;
-  return <Navigate to={session.role === 'FAMILY' ? '/portal' : '/dashboard'} replace />;
+  return <Navigate to={session.role === 'SUPER_ADMIN' ? '/admin/dashboard' : session.role === 'DEVELOPMENT_OFFICER' ? '/officer/dashboard' : session.role === 'FIELD_VOLUNTEER' ? '/volunteer/dashboard' : '/family/dashboard'} replace />;
 }
 
 function AccessDenied() {
@@ -324,6 +324,10 @@ export default function App() {
           <Route path="/villages" element={<VillagesPage />} />
         </Route>
 
+        <Route element={<RequireRole roles={['SUPER_ADMIN']} />}><Route path="/admin/dashboard" element={<DashboardPage />} /></Route>
+        <Route element={<RequireRole roles={['DEVELOPMENT_OFFICER']} />}><Route path="/officer/dashboard" element={<DashboardPage />} /></Route>
+        <Route element={<RequireRole roles={['FIELD_VOLUNTEER']} />}><Route path="/volunteer/dashboard" element={<DashboardPage />} /></Route>
+
         <Route element={<RequireRole roles={['FIELD_VOLUNTEER']} />}><Route path="/field-visits" element={<FieldVolunteerPage />} /></Route>
 
         <Route element={<RequireRole roles={['SUPER_ADMIN', 'DEVELOPMENT_OFFICER']} />}>
@@ -331,7 +335,7 @@ export default function App() {
           <Route path="/reports" element={<ReportsPage />} />
         </Route>
         <Route element={<RequireRole roles={['SUPER_ADMIN']} />}><Route path="/admin" element={<AdminPage />} /></Route>
-        <Route element={<RequireRole roles={['FAMILY']} />}><Route path="/portal" element={<FamilyPortalPage />} /></Route>
+        <Route element={<RequireRole roles={['FAMILY']} />}><Route path="/portal" element={<FamilyPortalPage />} /><Route path="/family/dashboard" element={<FamilyPortalPage />} /></Route>
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />

@@ -8,7 +8,6 @@ export interface SessionState {
   authenticated: boolean;
   initialized: boolean;
   accessToken: string | null;
-  refreshToken: string | null;
   userId: string | null;
   familyId: string | null;
   role: UserRole | null;
@@ -22,7 +21,6 @@ const anonymousSession: SessionState = {
   authenticated: false,
   initialized: false,
   accessToken: null,
-  refreshToken: null,
   userId: null,
   familyId: null,
   role: null,
@@ -49,7 +47,6 @@ function loadStoredSession(): SessionState {
     if (
       candidate.authenticated !== true
       || typeof candidate.accessToken !== 'string'
-      || typeof candidate.refreshToken !== 'string'
       || typeof candidate.userId !== 'string'
       || typeof candidate.name !== 'string'
       || !isUserRole(candidate.role)
@@ -83,12 +80,11 @@ function persistSession(session: SessionState) {
   }
 }
 
-function toSession(user: ApiUser, tokens: Pick<AuthSession, 'accessToken' | 'refreshToken'>): SessionState {
+function toSession(user: ApiUser, tokens: Pick<AuthSession, 'accessToken'>): SessionState {
   return {
     authenticated: true,
     initialized: true,
     accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken ?? null,
     userId: user.id,
     familyId: user.familyId,
     role: user.role,
@@ -127,10 +123,7 @@ let refreshInFlight: Promise<boolean> | null = null;
 /** Refreshes an expired session once, coalescing simultaneous failed requests. */
 export function refreshSession() {
   if (refreshInFlight) return refreshInFlight;
-  const { refreshToken } = store.getState().session;
-  if (!refreshToken) return Promise.resolve(false);
-
-  refreshInFlight = authApi.refresh(refreshToken)
+  refreshInFlight = authApi.refresh()
     .then((next) => {
       store.dispatch(refreshSucceeded(next));
       return true;
@@ -147,9 +140,8 @@ export function refreshSession() {
 
 /** Revokes the refresh token when possible, then clears this device's session. */
 export async function logoutSession() {
-  const { refreshToken } = store.getState().session;
   try {
-    await authApi.logout(refreshToken ?? undefined);
+    await authApi.logout();
   } catch {
     // Clearing this device remains important even if the network is unavailable.
   } finally {
@@ -160,7 +152,7 @@ export async function logoutSession() {
 /** Validates a persisted login before protected routes become available. */
 export async function restoreSession() {
   const session = store.getState().session;
-  if (!session.authenticated || !session.refreshToken) {
+  if (!session.authenticated) {
     store.dispatch(sessionReady());
     return false;
   }

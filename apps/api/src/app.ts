@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import { env } from './config/env';
 import { prisma } from './lib/prisma';
 import { errorHandler, notFound } from './middleware/error-handler';
-import { createRateLimit, otpRateLimit } from './middleware/rate-limit';
+import { createRateLimit, loginRateLimit } from './middleware/rate-limit';
 import { adminRouter } from './routes/admin.routes';
 import { auditRouter } from './routes/audit.routes';
 import { announcementsRouter } from './routes/announcements.routes';
@@ -34,8 +34,7 @@ export const openApiDocument = {
     securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
   },
   paths: {
-    '/auth/request-otp': { post: { summary: 'Request a one-time password' } },
-    '/auth/verify-otp': { post: { summary: 'Verify OTP and receive access and refresh tokens' } },
+    '/auth/login': { post: { summary: 'Sign in with username/email and password' } },
     '/auth/refresh': { post: { summary: 'Rotate refresh token' } },
     '/families': { get: { summary: 'List scoped families' }, post: { summary: 'Create a family draft' } },
     '/schemes': { get: { summary: 'List schemes' }, post: { summary: 'Create scheme (super admin)' } },
@@ -59,7 +58,7 @@ export const createApp = () => {
   });
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
   app.use(cors({
-    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)), credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Request-Id'],
     maxAge: 86_400,
@@ -87,8 +86,7 @@ export const createApp = () => {
 
   app.get('/api/openapi.json', (_request, response) => response.json(openApiDocument));
   app.use('/api', createRateLimit({ windowMs: env.API_RATE_LIMIT_WINDOW_MS, max: env.API_RATE_LIMIT_MAX }));
-  app.use('/api/auth/request-otp', otpRateLimit);
-  app.use('/api/auth/verify-otp', otpRateLimit);
+  app.use('/api/auth/login', loginRateLimit);
   app.use('/api/auth', authRouter);
   app.use('/api/geography', geographyRouter);
   app.use('/api/families', familiesRouter);

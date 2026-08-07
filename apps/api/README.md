@@ -16,7 +16,7 @@ The API listens on port `4000` by default. `GET /health` verifies database conne
 
 ## API areas
 
-- OTP/JWT authentication and rotating refresh tokens
+- Password/JWT authentication with rotating refresh tokens
 - Scoped family onboarding, documents, workflow, visits, and eligibility
 - Scheme, application, village/map, dashboard, report, and global-search APIs
 - Notifications, announcements, field volunteer sync, family portal, and administration APIs
@@ -31,4 +31,4 @@ npm run build --workspace @tribalconnect/api
 
 ## Security and operations
 
-The service returns masked Aadhaar values and stores only salted lookup hashes. Development uses the console OTP transport; production refuses to start unless `OTP_PROVIDER=webhook` and a valid `OTP_WEBHOOK_URL` are configured. Production deployments also need restrictive CORS origins, managed object storage with malware scanning, production secrets, and a shared rate-limit store. Backup records in the application track controlled configuration snapshots; database recovery remains the responsibility of managed PostgreSQL backups or scheduled `pg_dump` operations.
+The service returns masked Aadhaar values and stores only salted lookup hashes. Passwords are bcrypt-hashed and refresh tokens are held in HttpOnly cookies. Production deployments need restrictive CORS origins, managed object storage with malware scanning, production secrets, and a shared rate-limit store. Backup records in the application track controlled configuration snapshots; database recovery remains the responsibility of managed PostgreSQL backups or scheduled `pg_dump` operations.

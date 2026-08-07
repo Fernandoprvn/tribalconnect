@@ -37,7 +37,7 @@ const postToConfiguredProvider = async (notification: {
   channel: NotificationChannel;
   title: string;
   body: string;
-  user: { mobile: string; email: string | null; fullName: string };
+  user: { mobile: string | null; email: string | null; fullName: string };
   metadata: unknown;
 }) => {
   if (!env.NOTIFICATION_WEBHOOK_URL) return false;

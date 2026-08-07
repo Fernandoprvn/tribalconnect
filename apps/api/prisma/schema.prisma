@@ -116,8 +116,10 @@ enum BackupStatus {
 model User {
   id               String       @id @default(uuid())
   fullName         String
-  mobile           String
-  email            String?
+  username         String       @unique
+  email            String?      @unique
+  passwordHash     String
+  mobile           String?
   role             Role
   status           UserStatus   @default(ACTIVE)
   avatarUrl        String?
@@ -145,7 +147,6 @@ model User {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  @@unique([mobile, role])
   @@index([districtId])
   @@index([role, status])
 }
@@ -473,19 +474,6 @@ model Announcement {
   updatedAt   DateTime  @updatedAt
 
   @@index([isPublished, publishedAt])
-}
-
-model OtpChallenge {
-  id          String    @id @default(uuid())
-  mobile      String
-  role        Role?
-  codeHash    String
-  expiresAt   DateTime
-  verifiedAt  DateTime?
-  attempts    Int       @default(0)
-  createdAt   DateTime  @default(now())
-
-  @@index([mobile, role, createdAt])
 }
 
 model AuditLog {

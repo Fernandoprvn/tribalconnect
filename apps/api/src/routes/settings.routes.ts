@@ -21,7 +21,7 @@ const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
 const settingsPayload = (
-  user: { fullName: string; email: string | null; mobile: string; avatarUrl: string | null; district: { name: string } | null },
+  user: { fullName: string; email: string | null; mobile: string | null; avatarUrl: string | null; district: { name: string } | null },
   preference: { value: Prisma.JsonValue },
   notification: { sms: boolean; whatsapp: boolean; email: boolean; inApp: boolean },
 ) => {
@@ -31,7 +31,7 @@ const settingsPayload = (
     profile: {
       fullName: user.fullName,
       email: user.email,
-      mobile: maskMobile(user.mobile),
+      mobile: user.mobile ? maskMobile(user.mobile) : null,
       avatarUrl: user.avatarUrl,
       employeeId: typeof storedProfile.employeeId === 'string' ? storedProfile.employeeId : '',
       assignedGeography: user.district?.name ?? '',

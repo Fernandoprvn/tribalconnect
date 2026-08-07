@@ -6,7 +6,8 @@ export const API_BASE_URL = configuredBaseUrl.replace(/\/+$/, '');
 export interface ApiUser {
   id: string;
   fullName: string;
-  mobile: string;
+  username: string;
+  mobile: string | null;
   email: string | null;
   role: UserRole;
   familyId: string | null;
@@ -15,17 +16,8 @@ export interface ApiUser {
 
 export interface AuthSession {
   accessToken: string;
-  refreshToken?: string;
   tokenType?: string;
   user: ApiUser;
-}
-
-export interface OtpRequestResponse {
-  message: string;
-  mobile: string;
-  expiresAt: string;
-  /** Present only when the API is intentionally running in development OTP mode. */
-  developmentCode?: string;
 }
 
 export interface ApiListResponse<T> {
@@ -195,29 +187,21 @@ export async function apiDownload(path: string, filename?: string) {
 }
 
 export const authApi = {
-  requestOtp: (input: { mobile: string; role: UserRole }) => apiRequest<OtpRequestResponse>('/auth/request-otp', {
+  login: (input: { identifier: string; password: string; rememberMe: boolean }) => apiRequest<AuthSession>('/auth/login', {
     method: 'POST',
     authenticated: false,
     retryOnUnauthorized: false,
     json: input,
   }),
-  verifyOtp: (input: { mobile: string; role: UserRole; code: string }) => apiRequest<AuthSession>('/auth/verify-otp', {
+  refresh: () => apiRequest<AuthSession>('/auth/refresh', {
     method: 'POST',
     authenticated: false,
     retryOnUnauthorized: false,
-    json: input,
   }),
-  refresh: (refreshToken?: string) => apiRequest<AuthSession>('/auth/refresh', {
+  logout: () => apiRequest<void>('/auth/logout', {
     method: 'POST',
     authenticated: false,
     retryOnUnauthorized: false,
-    json: refreshToken ? { refreshToken } : {},
-  }),
-  logout: (refreshToken?: string) => apiRequest<void>('/auth/logout', {
-    method: 'POST',
-    authenticated: false,
-    retryOnUnauthorized: false,
-    json: refreshToken ? { refreshToken } : {},
   }),
   me: () => apiRequest<{ user: ApiUser }>('/auth/me'),
 };

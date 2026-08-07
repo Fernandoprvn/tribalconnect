@@ -6,7 +6,7 @@ declare global {
       auth?: {
         userId: string;
         role: Role;
-        mobile: string;
+        username: string;
         familyId?: string | null;
         districtId?: string | null;
       };

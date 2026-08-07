@@ -19,7 +19,7 @@ const programs = [
 
 const faqs = [
   ['Who can register a family?', 'A family head, an authorised field volunteer, or an officer from a Rural Development Center can begin registration. The family profile is reviewed before schemes are recommended.'],
-  ['Is Aadhaar information kept safe?', 'Yes. Aadhaar is masked in the portal and used only for permitted identity verification workflows. Do not share OTPs with anyone.'],
+  ['Is Aadhaar information kept safe?', 'Yes. Aadhaar is masked in the portal and used only for permitted identity verification workflows. Keep your account password private.'],
   ['How do I know if a scheme was approved?', 'You will receive an SMS, WhatsApp or in-app message. You can also sign in with your mobile number to track each application.'],
   ['Can a family apply to more than one scheme?', 'Yes. The eligibility check shows every relevant scheme. An officer will help avoid duplicate benefits and collect the required documents.'],
 ];

@@ -44,8 +44,8 @@ export const createRateLimit = ({ windowMs, max, key = (request) => request.ip ?
   };
 };
 
-export const otpRateLimit = createRateLimit({
+export const loginRateLimit = createRateLimit({
   windowMs: 15 * 60_000,
   max: 10,
-  key: (request) => `${request.ip}:${typeof request.body?.mobile === 'string' ? request.body.mobile.replace(/\D/g, '') : ''}`,
+  key: (request) => `${request.ip}:${typeof request.body?.identifier === 'string' ? request.body.identifier.trim().toLowerCase() : ''}`,
 });

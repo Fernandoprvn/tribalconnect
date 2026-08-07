@@ -1,4 +1,5 @@
 import { BackupStatus, Prisma, Role, UserStatus } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
@@ -59,7 +60,7 @@ adminRouter.get('/users', asyncHandler(async (request, response) => {
     ...(role ? { role } : {}),
     ...(status ? { status } : {}),
     ...(districtId ? { districtId } : {}),
-    ...(search ? { OR: [{ fullName: { contains: search, mode: 'insensitive' as const } }, { mobile: { contains: search.replace(/\D/g, '') } }, { email: { contains: search, mode: 'insensitive' as const } }] } : {}),
+    ...(search ? { OR: [{ fullName: { contains: search, mode: 'insensitive' as const } }, { username: { contains: search, mode: 'insensitive' as const } }, { mobile: { contains: search.replace(/\D/g, '') } }, { email: { contains: search, mode: 'insensitive' as const } }] } : {}),
   };
   const [users, total] = await prisma.$transaction([
     prisma.user.findMany({ where, include: { district: { select: { id: true, name: true } }, family: { select: { id: true, familyCode: true, headName: true } } }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -71,8 +72,9 @@ adminRouter.get('/users', asyncHandler(async (request, response) => {
 adminRouter.post('/users', asyncHandler(async (request, response) => {
   const input = adminUserSchema.parse(request.body);
   await validateUserRelations(input);
+  const { password, ...userInput } = input;
   const user = await prisma.user.create({
-    data: { ...input, mobile: normalizeMobile(input.mobile) },
+    data: { ...userInput, passwordHash: await bcrypt.hash(password, 12), mobile: input.mobile ? normalizeMobile(input.mobile) : null },
     include: { district: { select: { id: true, name: true } }, family: { select: { id: true, familyCode: true, headName: true } } },
   });
   await writeAuditLog(request, 'CREATE', 'User', user.id, { role: user.role });
@@ -83,11 +85,12 @@ adminRouter.patch('/users/:id', asyncHandler(async (request, response) => {
   const userId = idSchema.parse(request.params.id);
   const existing = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   const input = adminUserUpdateSchema.parse(request.body);
+  const { password, ...userInput } = input;
   const next = { role: input.role ?? existing.role, districtId: input.districtId === undefined ? existing.districtId : input.districtId, familyId: input.familyId === undefined ? existing.familyId : input.familyId };
   await validateUserRelations(next);
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { ...input, ...(input.mobile ? { mobile: normalizeMobile(input.mobile) } : {}) },
+    data: { ...userInput, ...(password ? { passwordHash: await bcrypt.hash(password, 12) } : {}), ...(input.mobile ? { mobile: normalizeMobile(input.mobile) } : {}) },
     include: { district: { select: { id: true, name: true } }, family: { select: { id: true, familyCode: true, headName: true } } },
   });
   if (input.role || input.status && input.status !== UserStatus.ACTIVE) await revokeAllRefreshTokens(userId);

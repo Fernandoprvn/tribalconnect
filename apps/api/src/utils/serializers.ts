@@ -4,7 +4,8 @@ import { maskMobile } from './identifiers';
 export const serializeUser = (user: AuthenticatedUser) => ({
   id: user.id,
   fullName: user.fullName,
-  mobile: maskMobile(user.mobile),
+  username: user.username,
+  mobile: user.mobile ? maskMobile(user.mobile) : null,
   email: user.email,
   role: user.role,
   familyId: user.familyId,

@@ -7,6 +7,17 @@ const server = app.listen(env.PORT, () => {
   console.info(`TribalConnect API listening on http://localhost:${env.PORT}/api`);
 });
 
+// A second `npm run dev:api` used to terminate with an unhandled EventEmitter
+// error. Keep the existing server intact and explain how to resolve the clash.
+server.once('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`TribalConnect API could not start: port ${env.PORT} is already in use. Stop the existing API process or set PORT to a free port before starting another instance.`);
+  } else {
+    console.error('TribalConnect API could not start.', error);
+  }
+  void prisma.$disconnect().finally(() => { process.exitCode = 1; });
+});
+
 const shutdown = (signal: string) => {
   console.info(`Received ${signal}; shutting down TribalConnect API.`);
   server.close((error) => {

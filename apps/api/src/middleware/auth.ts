@@ -9,13 +9,13 @@ import { asyncHandler } from '../utils/async-handler';
 export type AccessTokenPayload = JwtPayload & {
   sub: string;
   role: Role;
-  mobile: string;
+  username: string;
   familyId?: string | null;
 };
 
-export const createAccessToken = (user: { id: string; role: Role; mobile: string; familyId?: string | null }) =>
+export const createAccessToken = (user: { id: string; role: Role; username: string; familyId?: string | null }) =>
   jwt.sign(
-    { role: user.role, mobile: user.mobile, familyId: user.familyId ?? null },
+    { role: user.role, username: user.username, familyId: user.familyId ?? null },
     env.JWT_SECRET,
     { subject: user.id, expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'] },
   );
@@ -27,7 +27,7 @@ const decodeToken = (token: string): AccessTokenPayload => {
   } catch {
     throw new ApiError(401, 'Invalid or expired access token.');
   }
-  if (typeof decoded === 'string' || !decoded.sub || !decoded.role || !decoded.mobile) {
+  if (typeof decoded === 'string' || !decoded.sub || !decoded.role || !decoded.username) {
     throw new ApiError(401, 'Invalid access token.');
   }
   return decoded as AccessTokenPayload;
@@ -40,14 +40,14 @@ export const requireAuth = asyncHandler(async (request, _response, next) => {
   const payload = decodeToken(authorization.slice('Bearer '.length));
   const user = await prisma.user.findUnique({
     where: { id: payload.sub },
-    select: { id: true, role: true, mobile: true, familyId: true, districtId: true, status: true },
+    select: { id: true, role: true, username: true, familyId: true, districtId: true, status: true },
   });
   if (!user || user.status !== UserStatus.ACTIVE) throw new ApiError(401, 'This account is inactive or unavailable.');
 
   request.auth = {
     userId: user.id,
     role: user.role,
-    mobile: user.mobile,
+    username: user.username,
     familyId: user.familyId,
     districtId: user.districtId,
   };

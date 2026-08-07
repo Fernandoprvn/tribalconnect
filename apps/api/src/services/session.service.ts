@@ -89,4 +89,4 @@ export const revokeAllRefreshTokens = async (userId: string) =>
 export const cleanupExpiredSessions = async () =>
   prisma.refreshToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 
-export type AuthenticatedUser = Pick<User, 'id' | 'fullName' | 'mobile' | 'email' | 'role' | 'familyId' | 'avatarUrl'>;
+export type AuthenticatedUser = Pick<User, 'id' | 'fullName' | 'username' | 'mobile' | 'email' | 'role' | 'familyId' | 'avatarUrl'>;
